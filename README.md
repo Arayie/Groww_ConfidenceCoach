@@ -226,3 +226,4 @@ An educational web application designed for young adults aged 20–28 who want t
 - [x] Clean API client layer in `lib/api/client.ts` prepared for future FastAPI backend on Render.
 - [x] Zero backend/database dependencies in Phase 1 (no Firebase, Supabase, or MongoDB).
 - [x] Clean production build with zero TypeScript or compilation errors.
+# Groww_ConfidenceCoach
