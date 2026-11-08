@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: growww-sip-coach-api
+    runtime: python
+    rootDir: backend
+    buildCommand: "pip install -r requirements.txt && alembic upgrade head"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health
+    plan: standard
+    disk:
+      name: growww-sqlite-disk
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_PATH
+        value: /var/data/growww.db
+      - key: ENVIRONMENT
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://growww-sip-coach.vercel.app,http://localhost:3000"

@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
-import { ChevronDown, ExternalLink, HelpCircle, Search, ShieldCheck } from "lucide-react";
-import { FAQS_DATA } from "@/lib/constants/faqs";
+import React, { useState, useEffect } from "react";
+import { ChevronDown, ExternalLink, HelpCircle, Search, ShieldCheck, Database, RefreshCw } from "lucide-react";
+import { FaqItem } from "@/lib/types";
+import { apiClient } from "@/lib/api/client";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils/cn";
 
 export function FaqAccordion() {
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
+  const [dataSource, setDataSource] = useState<string>("loading");
+  const [isLoading, setIsLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>("faq-1");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -21,15 +25,29 @@ export function FaqAccordion() {
     "Tax & Regulations",
   ];
 
-  const filteredFaqs = FAQS_DATA.filter((faq) => {
-    const matchesCategory =
-      selectedCategory === "All" || faq.category === selectedCategory;
-    const matchesSearch =
-      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      faq.shortAnswer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      faq.fullExplanation.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+
+    apiClient
+      .getFaqs(selectedCategory, searchQuery)
+      .then((res) => {
+        if (isMounted) {
+          setFaqs(res.data);
+          setDataSource(res.source);
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCategory, searchQuery]);
 
   const toggleAccordion = (id: string) => {
     setOpenId((prev) => (prev === id ? null : id));
@@ -50,6 +68,15 @@ export function FaqAccordion() {
           <p className="text-base text-slate-400 max-w-2xl mx-auto">
             15 core questions every beginner asks before starting their first SIP. Answers are verified and sourced from official regulatory bodies.
           </p>
+
+          {/* Database connection indicator */}
+          <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+            <Database className="h-3 w-3 text-groww" />
+            <span>Data Provider:</span>
+            <span className="font-mono text-slate-300">
+              {dataSource === "fastapi_sqlite_backend" ? "FastAPI + SQLite DB" : "Curated Educational Corpus"}
+            </span>
+          </div>
         </div>
 
         {/* Search & Category Filter Controls */}
@@ -83,8 +110,16 @@ export function FaqAccordion() {
           </div>
         </div>
 
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center gap-2 py-8 text-xs text-slate-400">
+            <RefreshCw className="h-4 w-4 animate-spin text-groww" />
+            <span>Loading FAQs from knowledge base...</span>
+          </div>
+        )}
+
         {/* FAQs List */}
-        {filteredFaqs.length === 0 ? (
+        {!isLoading && faqs.length === 0 ? (
           <div className="text-center py-12 rounded-xl border border-dashed border-border bg-surface-card/40 p-8">
             <p className="text-slate-400 text-sm">No FAQs match your search criteria.</p>
             <button
@@ -99,7 +134,7 @@ export function FaqAccordion() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredFaqs.map((faq) => {
+            {faqs.map((faq) => {
               const isOpen = openId === faq.id;
               return (
                 <div
@@ -166,18 +201,19 @@ export function FaqAccordion() {
                             <span>Official Source Reference:</span>
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
-                            {faq.sources.map((src) => (
-                              <a
-                                key={src.id}
-                                href={src.canonicalUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-slate-300 hover:text-groww hover:underline bg-surface-elevated px-2 py-0.5 rounded border border-border-subtle"
-                              >
-                                {src.authority} — {src.title}
-                                <ExternalLink className="h-2.5 w-2.5" />
-                              </a>
-                            ))}
+                            {faq.sources &&
+                              faq.sources.map((src) => (
+                                <a
+                                  key={src.id}
+                                  href={src.canonicalUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-slate-300 hover:text-groww hover:underline bg-surface-elevated px-2 py-0.5 rounded border border-border-subtle"
+                                >
+                                  {src.authority} — {src.title}
+                                  <ExternalLink className="h-2.5 w-2.5" />
+                                </a>
+                              ))}
                           </div>
                         </div>
 

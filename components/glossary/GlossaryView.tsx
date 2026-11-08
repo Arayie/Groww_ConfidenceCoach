@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, BookmarkCheck, ExternalLink, ShieldCheck, X } from "lucide-react";
-import { GLOSSARY_TERMS } from "@/lib/constants/glossaryTerms";
+import React, { useState, useEffect } from "react";
+import { Search, BookmarkCheck, ExternalLink, X, Database, RefreshCw } from "lucide-react";
 import { GlossaryEntry } from "@/lib/types";
+import { apiClient } from "@/lib/api/client";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils/cn";
 
 export function GlossaryView() {
+  const [terms, setTerms] = useState<GlossaryEntry[]>([]);
+  const [dataSource, setDataSource] = useState<string>("loading");
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
@@ -20,19 +23,29 @@ export function GlossaryView() {
     "Investor Protection",
   ];
 
-  const filteredTerms = GLOSSARY_TERMS.filter((entry) => {
-    const matchesCat =
-      selectedCategory === "All" || entry.category === selectedCategory;
-    const termQuery = searchTerm.toLowerCase().trim();
-    const matchesSearch =
-      !termQuery ||
-      entry.term.toLowerCase().includes(termQuery) ||
-      entry.fullForm?.toLowerCase().includes(termQuery) ||
-      entry.definition.toLowerCase().includes(termQuery) ||
-      entry.practicalExample?.toLowerCase().includes(termQuery);
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
 
-    return matchesCat && matchesSearch;
-  });
+    apiClient
+      .getGlossary(selectedCategory, searchTerm)
+      .then((res) => {
+        if (isMounted) {
+          setTerms(res.data);
+          setDataSource(res.source);
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCategory, searchTerm]);
 
   return (
     <div className="space-y-8">
@@ -77,18 +90,33 @@ export function GlossaryView() {
       </div>
 
       {/* Terms Count & Results Indicator */}
-      <div className="flex items-center justify-between text-xs text-slate-400 pb-2 border-b border-border/50">
-        <span>
-          Showing <strong className="text-white">{filteredTerms.length}</strong> terms
-          {selectedCategory !== "All" && ` in ${selectedCategory}`}
-        </span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 pb-2 border-b border-border/50 gap-2">
+        <div className="flex items-center gap-2">
+          <span>
+            Showing <strong className="text-white">{terms.length}</strong> terms
+            {selectedCategory !== "All" && ` in ${selectedCategory}`}
+          </span>
+          <span className="text-slate-600">•</span>
+          <span className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-300">
+            <Database className="h-3 w-3 text-groww" />
+            {dataSource === "fastapi_sqlite_backend" ? "FastAPI SQLite Store" : "Seed Corpus"}
+          </span>
+        </div>
         <span className="text-[11px] text-slate-500">
           Source: Official SEBI &amp; AMFI Definitions
         </span>
       </div>
 
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12 gap-2 text-xs text-slate-400">
+          <RefreshCw className="h-4 w-4 animate-spin text-groww" />
+          <span>Searching glossary database...</span>
+        </div>
+      )}
+
       {/* Terms Grid */}
-      {filteredTerms.length === 0 ? (
+      {!isLoading && terms.length === 0 ? (
         <div className="text-center py-16 rounded-xl border border-dashed border-border bg-surface-card/40 p-8">
           <p className="text-slate-400 text-sm">
             No terms found matching &ldquo;{searchTerm}&rdquo;.
@@ -105,7 +133,7 @@ export function GlossaryView() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {filteredTerms.map((item) => (
+          {terms.map((item) => (
             <div
               key={item.id}
               className="flex flex-col justify-between rounded-xl border border-border bg-surface-card p-5 hover:border-slate-700 transition-colors"

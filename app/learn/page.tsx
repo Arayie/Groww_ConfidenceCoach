@@ -1,21 +1,47 @@
 "use client";
 
-import React, { useState } from "react";
-import { BookOpen, Search, ShieldCheck, Filter, Clock } from "lucide-react";
-import { LEARNING_MODULES } from "@/lib/constants/modules";
+import React, { useState, useEffect } from "react";
+import { BookOpen, Search, ShieldCheck, Clock, RefreshCw, Database } from "lucide-react";
 import { LearningModule } from "@/lib/types";
+import { apiClient } from "@/lib/api/client";
 import { ModuleCard } from "@/components/learning/ModuleCard";
 import { ModuleModal } from "@/components/learning/ModuleModal";
-import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils/cn";
 
 export default function LearnPage() {
+  const [modules, setModules] = useState<LearningModule[]>([]);
+  const [dataSource, setDataSource] = useState<string>("loading");
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<"All" | "Beginner" | "Intermediate">("All");
 
-  const filteredModules = LEARNING_MODULES.filter((mod) => {
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+
+    apiClient
+      .getLearningModules()
+      .then((res) => {
+        if (isMounted) {
+          setModules(res.data);
+          setDataSource(res.source);
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredModules = modules.filter((mod) => {
     const matchesLevel = levelFilter === "All" || mod.level === levelFilter;
     const matchesSearch =
       mod.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -34,7 +60,7 @@ export default function LearnPage() {
     setSelectedModule(null);
   };
 
-  const totalMinutes = LEARNING_MODULES.reduce((acc, curr) => acc + curr.estimatedMinutes, 0);
+  const totalMinutes = modules.reduce((acc, curr) => acc + curr.estimatedMinutes, 0);
 
   return (
     <div className="py-10 md:py-16">
@@ -60,6 +86,10 @@ export default function LearnPage() {
             <span className="flex items-center gap-1.5 bg-surface-card px-3 py-1 rounded-md border border-border">
               <Clock className="h-3.5 w-3.5 text-groww" />
               ~{totalMinutes} Minutes Total Duration
+            </span>
+            <span className="flex items-center gap-1.5 bg-surface-card px-3 py-1 rounded-md border border-border">
+              <Database className="h-3.5 w-3.5 text-groww" />
+              Source: {dataSource === "fastapi_sqlite_backend" ? "FastAPI SQLite Store" : "Verified Seed Corpus"}
             </span>
             <span className="flex items-center gap-1.5 bg-surface-card px-3 py-1 rounded-md border border-border">
               <ShieldCheck className="h-3.5 w-3.5 text-groww" />
@@ -100,8 +130,16 @@ export default function LearnPage() {
           </div>
         </div>
 
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center gap-2 py-16 text-xs text-slate-400">
+            <RefreshCw className="h-4 w-4 animate-spin text-groww" />
+            <span>Loading modules from database...</span>
+          </div>
+        )}
+
         {/* Modules Grid */}
-        {filteredModules.length === 0 ? (
+        {!isLoading && filteredModules.length === 0 ? (
           <div className="text-center py-16 rounded-xl border border-dashed border-border bg-surface-card/40 p-8">
             <p className="text-slate-400 text-sm">No modules found matching &ldquo;{searchQuery}&rdquo;.</p>
             <button

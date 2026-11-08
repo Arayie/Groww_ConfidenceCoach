@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ShieldCheck, ExternalLink, Info } from "lucide-react";
+import { FeedbackWidget } from "@/components/ui/FeedbackWidget";
 
 export function Footer() {
   return (
@@ -133,10 +134,14 @@ export function Footer() {
           </p>
         </div>
 
-        {/* Bottom copyright */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 pt-6 border-t border-border-subtle">
-          <p>© 2026 GROWWW SIP Confidence Coach. Built for Educational Research & MVP Evaluation.</p>
-          <p className="mt-2 sm:mt-0">Phase 1: Frontend Foundation &amp; UI/UX</p>
+        {/* Bottom copyright & Feedback Widget */}
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 pt-6 border-t border-border-subtle gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <p>© 2026 GROWWW SIP Confidence Coach. Built for Educational Research & MVP Evaluation.</p>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <FeedbackWidget />
+          </div>
+          <p className="mt-2 sm:mt-0 font-mono text-[11px] text-groww/80">Phase 2: FastAPI + SQLite Integration</p>
         </div>
       </div>
     </footer>

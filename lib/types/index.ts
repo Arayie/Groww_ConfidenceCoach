@@ -75,3 +75,59 @@ export interface ChatMessage {
   isRefusal?: boolean;
   refusalReason?: string;
 }
+
+export interface FeedbackSubmission {
+  page: string;
+  feedback_type: "clarity" | "suggestion" | "bug" | "content" | "general";
+  feedback_text: string;
+  rating?: number;
+  session_id?: string;
+}
+
+export interface BackendFaqItem {
+  id: number;
+  question: string;
+  answer: string;
+  category: string;
+  difficulty_level: string;
+  display_order: number;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BackendLearningModule {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  category: string;
+  difficulty_level: string;
+  estimated_minutes: number;
+  display_order: number;
+  is_published: boolean;
+  lessons_count: number;
+  created_at: string;
+}
+
+export interface BackendJourneyStage {
+  id: number;
+  stage_number: number;
+  title: string;
+  description: string;
+  detailed_explanation: string;
+  display_order: number;
+  is_published: boolean;
+  created_at: string;
+}
+
+export interface BackendGlossaryTerm {
+  id: number;
+  term: string;
+  slug: string;
+  definition: string;
+  category: string;
+  related_terms?: string;
+  is_published: boolean;
+  created_at: string;
+}

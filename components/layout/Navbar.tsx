@@ -84,7 +84,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-card border border-border text-[11px] text-slate-400 font-medium">
             <span className="h-1.5 w-1.5 rounded-full bg-groww animate-pulse" />
-            Phase 1 Foundation
+            FastAPI + SQLite Active
           </div>
         </div>
 
